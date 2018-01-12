@@ -1,0 +1,8 @@
+/*
+/*/
+/TeamCode/build/
+!/TeamCode/
+*.gradle
+*.xml
+*.iml
+!.gitignore

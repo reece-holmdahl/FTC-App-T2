@@ -144,9 +144,9 @@ public class DriverControlled extends OpMode {
 
         //Pivot Servo Position
         if (inRange(pivotPos)) {
-            if (gamepad1.y)
+            if (gamepad1.x)
                 pivotPos += pivotSpeed;
-            else if (gamepad1.x)
+            else if (gamepad1.y)
                 pivotPos -= pivotSpeed * 0.25;
         }
 

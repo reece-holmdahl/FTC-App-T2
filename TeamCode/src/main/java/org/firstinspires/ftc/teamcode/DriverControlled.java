@@ -3,13 +3,18 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name = "One Gamepad")
+@TeleOp(name = "Driver Controlled")
 public class DriverControlled extends OpMode {
 
     //Link to Robot class
-    private Robot r = new Robot();
+    private Robot r = new Robot(telemetry);
+
+    //ElapsedTime classes
+    private final ElapsedTime relicToggle = new ElapsedTime();
+    private final ElapsedTime preciseToggle = new ElapsedTime();
 
     /* OpMode Variables */
 
@@ -58,10 +63,25 @@ public class DriverControlled extends OpMode {
     public void init() {
 
         //Hardware Map Devices in Robot Class
-        r.map(hardwareMap, telemetry);
+        r.map(hardwareMap);
 
         //Decrease Joystick Deadzone
         gamepad1.setJoystickDeadzone(0.05f);
+    }
+
+    public void start() {
+
+        //Move Pivot to front of robot
+        pivotPos = 0.82;
+
+        //Close Glyph claws
+        LCPos = 0;
+        RCPos = 1;
+
+        //Raise Glyph Arm slightly so claws can close
+        GAPower = 0.25;
+        sleep(400);
+        GAPower = 0;
     }
 
     /**
@@ -88,13 +108,16 @@ public class DriverControlled extends OpMode {
         }
 
         //Relic Mode
-        if (gamepad1.start && r.t.milliseconds() > 400) {
+        if (gamepad1.start && relicToggle.milliseconds() > 400) {
             relic = !relic;
-            r.t.reset();
+            relicToggle.reset();
         }
 
         //Precision Mode
-        precise = gamepad1.right_stick_button;
+        if (gamepad1.right_stick_button && preciseToggle.milliseconds() > 400) {
+            precise = !precise;
+            preciseToggle.reset();
+        }
 
         if (!precise) {
             driveSpeed = 0.85;
@@ -238,9 +261,10 @@ public class DriverControlled extends OpMode {
         r.telemetry("Arm:", GAPower);
     }
 
-    //Handle Thread Auton Boolean
-    public void stop() {
-        PerpetualExistenceThread.didAuton = false;
+    private void sleep(int millis) {
+        r.timer.reset();
+        while (r.timer.milliseconds() < millis)
+            Thread.yield();
     }
 
     private double driveCode(int end, int side) {

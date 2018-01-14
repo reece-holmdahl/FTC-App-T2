@@ -1,10 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -15,10 +15,10 @@ public class Robot {
     /* Classes */
 
     //ElapsedTime Class
-    ElapsedTime t = new ElapsedTime();
+    final ElapsedTime timer = new ElapsedTime();
 
     //Telemetry Class
-    Telemetry telemetry = null;
+    private final Telemetry telemetry;
 
     /* Motors */
 
@@ -50,7 +50,7 @@ public class Robot {
     /* Sensors */
 
     //Jewel Color Sensor
-    ColorSensor color = null;
+    NormalizedColorSensor color = null;
 
     //REV Robotics IMU
     BNO055IMU gyro = null;
@@ -60,14 +60,17 @@ public class Robot {
     //Relic Servo Positions
     final double CLAMP_REST = 1;
     final double PIVOT_REST = 0;
-    final double PIVOT_START = 0.032;
 
     //Glyph Servo Positions
     final double LC_REST = 1;
     final double RC_REST = 0;
 
     //Jewel Servo Position
-    final double JEWEL_REST = 1;
+    final double JEWEL_REST = 0.05;
+
+    Robot(Telemetry telemetry) {
+        this.telemetry = telemetry;
+    }
 
     /**
      * The map method hardware maps all the robot's hardware devices and uses the HardwareMap class
@@ -75,13 +78,7 @@ public class Robot {
      * @param map The HardwareMap class inherited from OpMode or LinearOpMode
      */
 
-    void map(HardwareMap map, Telemetry telemetry) {
-
-        PerpetualExistenceThread p = new PerpetualExistenceThread();
-        p.run();
-
-        //Save Telemetry
-        this.telemetry = telemetry;
+    void map(HardwareMap map) {
 
         /* Motors */
 
@@ -113,7 +110,7 @@ public class Robot {
         /* Sensors */
 
         //Jewel Color Sensor
-        color = map.colorSensor.get("color");
+        color = map.get(NormalizedColorSensor.class, "color");
 
         //REV Robotics IMU
         gyro = map.get(BNO055IMU.class, "imu");
@@ -145,11 +142,6 @@ public class Robot {
         //Glyph Motor Settings
         glyphArm.setDirection(DcMotorSimple.Direction.REVERSE);
         glyphArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        if (PerpetualExistenceThread.didAuton) {
-            glyphArm.setPower(-0.15);
-            wait(1250);
-            glyphArm.setPower(0);
-        }
 
         /* Servo Settings */
 
@@ -174,7 +166,7 @@ public class Robot {
 
         //Jewel Servo Settings
         jewel.setDirection(Servo.Direction.FORWARD);
-        //jewel.scaleRange(0, 0.5);
+        jewel.scaleRange(0, 0.7);
         jewel.setPosition(JEWEL_REST);
     }
 
@@ -198,12 +190,5 @@ public class Robot {
 
     void telemetry(String tag, Object data) {
         telemetry.addData(tag, data.toString());
-    }
-
-    void wait(int millis) {
-        t.reset();
-        while(t.milliseconds() < millis) {
-            Thread.yield();
-        }
     }
 }

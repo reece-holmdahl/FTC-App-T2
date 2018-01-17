@@ -78,7 +78,7 @@ public class Robot {
      * @param map The HardwareMap class inherited from OpMode or LinearOpMode
      */
 
-    void map(HardwareMap map) {
+    final void map(HardwareMap map) {
 
         /* Motors */
 
@@ -176,7 +176,7 @@ public class Robot {
      * autonomous when using the gyro is helpful.
      */
 
-    void useGyro() {
+    final void useGyro() {
 
         //Gyro Settings
         BNO055IMU.Parameters gyroParams = new BNO055IMU.Parameters();
@@ -188,7 +188,7 @@ public class Robot {
         gyro.initialize(gyroParams);
     }
 
-    void telemetry(String tag, Object data) {
+    final void telemetry(String tag, Object data) {
         telemetry.addData(tag, data.toString());
     }
 }

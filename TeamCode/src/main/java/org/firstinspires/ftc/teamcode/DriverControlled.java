@@ -48,9 +48,9 @@ public class DriverControlled extends OpMode {
     /* OpMode Constants */
 
     //Servo Speed Constants
-    private final double clampSpeed = 0.03;
-    private final double pivotSpeed = 0.01;
-    private final double clawSpeed = 0.025;
+    private final double clampSpeed = 0.035;
+    private final double pivotSpeed = 0.005;
+    private final double clawSpeed = 0.0175;
 
     //DriveCode Method Constants
     private final int front = 1, back = -1, right = 1, left = -1;

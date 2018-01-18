@@ -6,8 +6,8 @@ import com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-@TeleOp(name = "Driver Controlled")
-public class DriverControlled extends OpMode {
+@TeleOp(name = "Driver Controlled Thread Experiment")
+public class DriverControlledThreadExp extends OpMode {
 
     //Link to Robot class
     private Robot r = new Robot(telemetry);
@@ -17,6 +17,9 @@ public class DriverControlled extends OpMode {
     private final ElapsedTime preciseToggle = new ElapsedTime();
 
     /* OpMode Variables */
+
+    //Thread Control Boolean
+    private boolean threadOn;
 
     //Drivetrain Motor Power Variables
     private double FLPower = 0;
@@ -76,6 +79,9 @@ public class DriverControlled extends OpMode {
      */
 
     public void start() {
+
+        //Start Power and Position Control Thread
+        threadMode(true);
 
         //Extend Relic Slide so Pivot can go to front of robot
         RSPower = 1;
@@ -220,6 +226,16 @@ public class DriverControlled extends OpMode {
             RCPos = 1;
         if (RCPos < 0)
             RCPos = 0;
+    }
+
+    /**
+     * The loopThread method is ran during the loop method, and is actually identical to it but has
+     * another purpose. In this case, I use this extra thread to set the power and control the
+     * position of motors and servos, and use the main loop method to control each position. Setting
+     * up a separate thread for powering motors and one for finding their positions is a safer
+     * alternative than using no power and position variable.
+     */
+    private void loopThread() {
 
         /* Set Power to Motors */
 
@@ -237,9 +253,14 @@ public class DriverControlled extends OpMode {
 
         /* Set Servo Positions */
 
-        //Relic Servos
+        //Clamp Servo
         r.clamp.setPosition(clampPos);
-        r.pivot.setPosition(pivotPos / 8.75);   //Gets divided because we only want 1/8.75th of the servo's rotation
+
+        /* Pivot Servo
+         * The pivot servo's position is being divided by 8.75 because with REV Expansion Hubs the
+         * servo can be rotated ~8.75 times and we only need one full rotation.
+         */
+        r.pivot.setPosition(pivotPos / 8.75);
 
         //Glyph Servos
         r.LC.setPosition(LCPos);
@@ -247,6 +268,13 @@ public class DriverControlled extends OpMode {
 
         //Keep Jewel Servo Upright
         r.jewel.setPosition(r.JEWEL_REST);
+    }
+
+    /**
+     * The logThread method is here to constantly update telemetry regardless of any temporary
+     * pauses or errors in the main loop thread.
+     */
+    private void logThread() {
 
         /* Send Telemetry */
 
@@ -270,6 +298,44 @@ public class DriverControlled extends OpMode {
         r.telemetry("BL:", BLPower);
         r.telemetry("Slide:", RSPower);
         r.telemetry("Arm:", GAPower);
+    }
+
+    /**
+     * The stop method is ran once after the driver controlled period has ended and is usually used
+     * for post OpMode actions like resetting the robot or killing motors.
+     */
+    public void stop() {
+
+        //Stop Power and Position Control Thread
+        threadMode(false);
+
+        //Kill Motors
+        killMotors();
+    }
+
+    private void threadMode(boolean mode) {
+        if (mode) {
+            if (!thread.isAlive())
+                thread.run();
+            threadOn = true;
+        } else {
+            if (!thread.isInterrupted())
+                thread.interrupt();
+            threadOn = false;
+        }
+    }
+
+    private Thread thread = new Thread(new Runnable() {
+        public void run() {
+            while (threadOn) {
+                loopThread();
+                logThread();
+            }
+        }
+    });
+
+    private void killMotors() {
+
     }
 
     private void sleep(int millis) {

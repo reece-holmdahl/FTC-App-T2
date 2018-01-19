@@ -55,9 +55,6 @@ public class DriverControlledThreadExp extends OpMode {
     private final double pivotSpeed = 0.005;
     private final double clawSpeed = 0.0175;
 
-    //DriveCode Method Constants
-    private final int front = 1, back = -1, right = 1, left = -1;
-
     /**
      * The init method is run once when the INIT button is pressed on the DS phone.  It is used to
      * define and map all hardware devices in the OpMode.
@@ -110,6 +107,9 @@ public class DriverControlledThreadExp extends OpMode {
     public void loop() {
 
         /* Update Motor Power */
+
+        //Drivetrain driveCode Method Constants
+        final int front = 1, back = -1, right = 1, left = -1;
 
         //Drivetrain Motor Power and Relic Mode Config
         if (!relic) {
@@ -235,6 +235,7 @@ public class DriverControlledThreadExp extends OpMode {
      * up a separate thread for powering motors and one for finding their positions is a safer
      * alternative than using no power and position variable.
      */
+
     private void loopThread() {
 
         /* Set Power to Motors */
@@ -274,36 +275,38 @@ public class DriverControlledThreadExp extends OpMode {
      * The logThread method is here to constantly update telemetry regardless of any temporary
      * pauses or errors in the main loop thread.
      */
+
     private void logThread() {
 
         /* Send Telemetry */
 
         //OpMode Data Telemetry
-        r.telemetry("Relic Mode", relic);
-        r.telemetry("Precision Mode", precise);
+        r.log("Relic Mode", relic);
+        r.log("Precision Mode", precise);
 
         //Controller Telemetry
-        r.telemetry("LS X|Y:", moveX() + "|" + moveY());
-        r.telemetry("RSX:", turnX());
+        r.log("LS X|Y:", moveX() + "|" + moveY());
+        r.log("RSX:", turnX());
 
         //Servo Position Telemetry
-        r.telemetry("Clamp:", clampPos);
-        r.telemetry("Pivot:", pivotPos);
-        r.telemetry("Claw L|R:", LCPos + "|" + RCPos);
+        r.log("Clamp:", clampPos);
+        r.log("Pivot:", pivotPos);
+        r.log("Claw L|R:", LCPos + "|" + RCPos);
 
         //Motor Power Telemetry
-        r.telemetry("FL:", FLPower);
-        r.telemetry("FR:", FRPower);
-        r.telemetry("BR:", BRPower);
-        r.telemetry("BL:", BLPower);
-        r.telemetry("Slide:", RSPower);
-        r.telemetry("Arm:", GAPower);
+        r.log("FL:", FLPower);
+        r.log("FR:", FRPower);
+        r.log("BR:", BRPower);
+        r.log("BL:", BLPower);
+        r.log("Slide:", RSPower);
+        r.log("Arm:", GAPower);
     }
 
     /**
      * The stop method is ran once after the driver controlled period has ended and is usually used
      * for post OpMode actions like resetting the robot or killing motors.
      */
+
     public void stop() {
 
         //Stop Power and Position Control Thread
@@ -312,6 +315,13 @@ public class DriverControlledThreadExp extends OpMode {
         //Kill Motors
         killMotors();
     }
+
+    /**
+     * The threadMode method controls to status of the thread that handles calculation and telemetry
+     * so we can enable/disable it when necessary. It uses a detection system and a variable so the
+     * thread doesn't throw any errors or kill the OpMode via InterruptedException.
+     * @param mode  The status of activity desired for the thread, true (on) or false (off)
+     */
 
     private void threadMode(boolean mode) {
         if (mode) {
@@ -325,6 +335,7 @@ public class DriverControlledThreadExp extends OpMode {
         }
     }
 
+    //Creates the thread to handle calculations and telemetry
     private Thread thread = new Thread(new Runnable() {
         public void run() {
             while (threadOn) {
@@ -334,9 +345,39 @@ public class DriverControlledThreadExp extends OpMode {
         }
     });
 
+    /**
+     * The killMotors method is just a simple way to ensure all motors safely deactivate after the
+     * OpMode is complete, even if the thread stays active. By any chance the thread stays active,
+     * the power variables controlling the motors will be set to 0.
+     */
+
     private void killMotors() {
 
+        /* Kill Motors */
+
+        //Drivetrain Motors
+        r.FL.setPower(0);
+        FLPower = 0;
+        r.FR.setPower(0);
+        FRPower = 0;
+        r.BR.setPower(0);
+        BRPower = 0;
+        r.BL.setPower(0);
+        BLPower = 0;
+
+        //Relic Motor
+        r.relicSlide.setPower(0);
+
+        //Glyph Arm
+        r.glyphArm.setPower(0);
     }
+
+    /**
+     * The sleep method waits a certain amount of milliseconds before the next action occurs. In
+     * order to avoid a InterruptedException, the thread is yielded so no other actions occur while
+     * the method is waiting.
+     * @param millis    The amount of milliseconds to pause action for.
+     */
 
     private void sleep(int millis) {
         r.timer.reset();
@@ -344,20 +385,48 @@ public class DriverControlledThreadExp extends OpMode {
             Thread.yield();
     }
 
+    /**
+     * The driveCode method is the formula that allows holonomic drive to be controlled with two
+     * joysticks. Specify the end (front, back) and side (left, right) of the robot and be returned
+     * a value of power based on where the left joystick is.
+     * @param end   The end of the robot the motor is on (front, back)
+     * @param side  The side of the robot the motor is on (left, right)
+     * @return      The power a motor in said position should be
+     */
+
     private double driveCode(int end, int side) {
         double move = end * moveX() + side * moveY();
         double turn = turnX();
         return Range.clip(move * driveSpeed + turn * turnSpeed, -1, 1);
     }
 
+    /**
+     * The round method is very simple, it rounds a number inputted to the decimal place specified.
+     * @param input The input to be rounded
+     * @param place The place the input should be rounded to (0.01 or hundredths, 0.1 or tenths)
+     * @return      The input after being rounded
+     */
+
     private double round(double input, double place) {
         double multiplier = 1 / place;
         return ((int) (input * multiplier)) / multiplier;
     }
 
+    /**
+     * The inRange method returns if a variable specified is between 0 and 1, this method is used
+     * for keeping servo variables within their maximum ranges.
+     * @param var   The servo position variable to check
+     * @return      The boolean (true or false) specifying if the servo variable is within 0 and 1
+     */
+
     private boolean inRange(double var) {
         return var <= 1 && var >= 0;
     }
+
+    /*
+     * All doubles below are simply just renamed controller variables rounded to various decimal
+     * places for less error on the driver's end.
+     */
 
     private double moveX() {
         return round(gamepad1.left_stick_x, 0.05);

@@ -68,6 +68,11 @@ public class Robot {
     //Jewel Servo Position
     final double JEWEL_REST = 0.05;
 
+    /**
+     * Robot Hardware File constructor, grabs telemetry from OpMode so it can be used in a method.
+     * @param telemetry The telemetry file created by OpMode
+     */
+
     Robot(Telemetry telemetry) {
         this.telemetry = telemetry;
     }
@@ -188,7 +193,13 @@ public class Robot {
         gyro.initialize(gyroParams);
     }
 
-    final void telemetry(String tag, Object data) {
+    /**
+     * The log method is an easier way to send telemetry to the phones.
+     * @param tag   The tag given to the message sent to telemetry
+     * @param data  The data that goes along with the tag in the telemetry
+     */
+    
+    final void log(String tag, Object data) {
         telemetry.addData(tag, data.toString());
     }
 }
